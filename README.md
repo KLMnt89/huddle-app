@@ -1,6 +1,29 @@
 # Huddle — Real-Time Video Chat App
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-4.0.5-6DB33F?style=flat&logo=springboot&logoColor=white)
+![Java](https://img.shields.io/badge/Java-21-ED8B00?style=flat&logo=openjdk&logoColor=white)
+![React](https://img.shields.io/badge/React-19.2.4-61DAFB?style=flat&logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-8.0.4-646CFF?style=flat&logo=vite&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=flat&logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-ready-2496ed?style=flat&logo=docker&logoColor=white)
+![LiveKit](https://img.shields.io/badge/LiveKit-2.5.8-FF4F00?style=flat&logo=webrtc&logoColor=white)
+![JWT](https://img.shields.io/badge/JWT-0.12.6-000000?style=flat&logo=jsonwebtokens&logoColor=white)
+![Nginx](https://img.shields.io/badge/Nginx-proxy-009639?style=flat&logo=nginx&logoColor=white)
 
 A full-stack video conferencing application built with Spring Boot and React, powered by LiveKit for real-time WebRTC communication.
+
+## Table of Contents
+ 
+1. [Features](#features)
+2. [Tech Stack](#tech-stack)
+3. [Project Structure](#project-structure)
+4. [Getting Started](#getting-started)
+5. [Default Admin Account](#default-admin-account)
+6. [Ports](#ports)
+7. [API Overview](#api-overview)
+8. [How Invite Links Work](#how-invite-links-work)
+9. [Database Migrations](#database-migrations)
+10. [Environment Notes](#environment-notes)
+11. [Academic Context](#academic-context)
 
 ## Features
 
@@ -31,7 +54,7 @@ A full-stack video conferencing application built with Spring Boot and React, po
 | Database | PostgreSQL 15 |
 | Video | LiveKit Cloud (WebRTC) |
 | Auth | Spring Security + JWT + Refresh Tokens |
-| Frontend | React 18 + Vite |
+| Frontend | React 19 + Vite |
 | Reverse proxy | Nginx (Docker) |
 | Migrations | Flyway (local) / PostgreSQL init scripts (Docker) |
 
@@ -68,6 +91,7 @@ mux-video-rooms/
 
 - Docker & Docker Compose
 - A [LiveKit Cloud](https://livekit.io) account (free tier works)
+- An ngrok account (free) — needed for sharing with others via ngrok
 
 ### 1. Clone the repository
 
@@ -102,6 +126,89 @@ bash start.sh
 This runs `docker compose up --build`. Data in the database is preserved between restarts.
 
 Open **http://localhost** in your browser.
+
+### 4. Sharing with others via ngrok
+ 
+By default the app runs only on `http://localhost` — nobody outside your machine can reach it. **ngrok** punches a public HTTPS tunnel to your local port 80, so anyone with the link can open the app in their browser without installing anything.
+ 
+> **How it works under the hood**
+>
+> ngrok opens a persistent TCP connection from your machine to the ngrok cloud. When a remote user visits the public URL (e.g. `https://abc123.ngrok-free.app`), their browser connects to the ngrok edge servers, which forward the request through that tunnel to your local port 80 (Nginx → React / Spring Boot). The second user never connects directly to your machine — everything flows through the ngrok relay. LiveKit video/audio bypasses this tunnel entirely; it travels peer-to-peer (or through LiveKit's own TURN servers) via WebRTC, so the tunnel only carries the web app itself.
+>
+> **Only you need to run `docker compose`.** The second user only needs a browser and the public URL — no code, no Docker, no installation.
+>
+> ```
+> You (docker compose UP)              Second user
+>         |                                  |
+>         | Backend + Frontend + DB          | Browser only
+>         | everything runs locally          |
+>         |                                  |
+>         |←── https://abc123.ngrok-free.app ─→|
+>         |                                  |
+>         | LiveKit Cloud ══════════════════ | video/audio (WebRTC)
+> ```
+ 
+#### Step 1 — Install ngrok
+ 
+Go to [ngrok.com/download](https://ngrok.com/download), download for your OS, and install it.
+ 
+Then sign up (free) at [ngrok.com](https://ngrok.com) and copy your authtoken from the dashboard.
+ 
+Open the **ngrok terminal** (double-click `ngrok.exe` on Windows — it opens its own terminal window) and register your token:
+ 
+```bash
+ngrok config add-authtoken YOUR_TOKEN
+```
+ 
+#### Step 2 — Make sure the app is running in the background
+
+> You have already done that using `bash start.sh` command
+ 
+#### Step 3 — Start the tunnel
+ 
+In the **ngrok terminal**, run:
+ 
+```bash
+ngrok http 80
+```
+ 
+You will see output similar to:
+ 
+```
+Forwarding  https://abc123.ngrok-free.app -> http://localhost:80
+```
+ 
+Keep the ngrok terminal open for as long as you want the link to be active. Closing it will terminate the tunnel.
+ 
+#### Step 4 — Add the ngrok URL to CorsConfig.java
+ 
+Spring Security's CORS policy only allows origins you explicitly whitelist. Open `CorsConfig.java` and add your ngrok URL:
+ 
+```java
+config.addAllowedOrigin("http://localhost");
+config.addAllowedOrigin("http://localhost:5173");
+config.addAllowedOrigin("https://abc123.ngrok-free.app"); // ← your ngrok URL
+```
+ 
+Then rebuild the containers so the change takes effect:
+ 
+```bash
+docker compose down
+docker compose up -d --build
+```
+> **Note:** Do not run `bash reset.sh` here — that script removes the database volume and **all your data will be lost**.
+ 
+#### Step 5 — Share the link
+ 
+Send `https://abc123.ngrok-free.app` to anyone you want to invite. The second user only needs to:
+ 
+1. Open the URL in their browser
+2. Register or log in (or join as a guest)
+3. Enter the room
+
+That's it — no code, no Docker, no installation required on their end.
+ 
+> **Note:** The free ngrok plan generates a new random URL every time you restart `ngrok http 80`. Update `CorsConfig.java` and rebuild whenever the URL changes.
 
 ### Clean reset (wipes all data)
 
@@ -199,3 +306,7 @@ Flyway is **enabled** for local development and **disabled** in Docker (PostgreS
 - `JwtAuthFilter` updates `User.lastSeenAt` on every request (throttled to 1 DB write per 60s per user)
 - Rate limiting uses the display name as key — tracked in memory per JVM instance
 - `createdBy` on Room and Meeting is a display name string, not a foreign key to users
+
+## Academic Context
+
+This project was built as part of the **Web Programming** course.
