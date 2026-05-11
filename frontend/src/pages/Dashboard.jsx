@@ -456,28 +456,42 @@ export default function Dashboard() {
                 </div>
 
                 {/* Invite banner */}
-                {generatedRoom && (
-                    <div style={{
-                        background: '#E6F1FB', border: '0.5px solid #185FA5',
-                        borderRadius: 'var(--border-radius-lg)',
-                        padding: '12px 16px', marginBottom: 24,
-                        display: 'flex', alignItems: 'center', gap: 12,
-                    }}>
-                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#185FA5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M7 9a4 4 0 0 0 5.7.7l1.3-1.3a4 4 0 0 0-5.7-5.7L7 4" />
-                                <path d="M9 7a4 4 0 0 0-5.7-.7L2 7.7a4 4 0 0 0 5.7 5.7L9 12" />
-                            </svg>
+                {generatedRoom && (() => {
+                    const ngrokBase = import.meta.env.VITE_NGROK_URL
+                    const ngrokLink = ngrokBase ? `${ngrokBase}/join/${generatedRoom.inviteCode}` : null
+                    return (
+                        <div style={{
+                            background: '#E6F1FB', border: '0.5px solid #185FA5',
+                            borderRadius: 'var(--border-radius-lg)',
+                            padding: '12px 16px', marginBottom: 24,
+                            display: 'flex', alignItems: 'center', gap: 12,
+                        }}>
+                            <div style={{ width: 34, height: 34, borderRadius: '50%', background: '#185FA5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M7 9a4 4 0 0 0 5.7.7l1.3-1.3a4 4 0 0 0-5.7-5.7L7 4" />
+                                    <path d="M9 7a4 4 0 0 0-5.7-.7L2 7.7a4 4 0 0 0 5.7 5.7L9 12" />
+                                </svg>
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ fontSize: 12, fontWeight: 500, color: '#0C447C', marginBottom: 6 }}>Room created — share the invite link</div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: ngrokLink ? 5 : 0 }}>
+                                    <span style={{ fontSize: 10, color: '#185FA5', background: 'rgba(24,95,165,0.12)', padding: '1px 5px', borderRadius: 3, flexShrink: 0 }}>local</span>
+                                    <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#185FA5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{generatedLink}</span>
+                                    <button className="btn btn-sm" style={{ flexShrink: 0 }} onClick={() => copyLink(generatedLink, 'banner')}>{copiedId === 'banner' ? '✓' : 'Copy'}</button>
+                                </div>
+                                {ngrokLink && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                        <span style={{ fontSize: 10, color: '#0C447C', background: 'rgba(24,95,165,0.18)', padding: '1px 5px', borderRadius: 3, flexShrink: 0 }}>ngrok</span>
+                                        <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#185FA5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{ngrokLink}</span>
+                                        <button className="btn btn-sm" style={{ flexShrink: 0 }} onClick={() => copyLink(ngrokLink, 'banner-ngrok')}>{copiedId === 'banner-ngrok' ? '✓' : 'Copy'}</button>
+                                    </div>
+                                )}
+                            </div>
+                            <button className="btn btn-sm btn-primary" onClick={() => window.open(generatedLink, '_blank')}>Join</button>
+                            <button onClick={() => { setGeneratedRoom(null); setGeneratedLink('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#185FA5', fontSize: 18, lineHeight: 1 }}>×</button>
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={{ fontSize: 12, fontWeight: 500, color: '#0C447C', marginBottom: 3 }}>Room created — share the invite link</div>
-                            <div style={{ fontSize: 11, fontFamily: 'monospace', color: '#185FA5', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{generatedLink}</div>
-                        </div>
-                        <button className="btn btn-sm" onClick={() => copyLink(generatedLink, 'banner')}>{copiedId === 'banner' ? '✓ Copied' : 'Copy'}</button>
-                        <button className="btn btn-sm btn-primary" onClick={() => window.open(generatedLink, '_blank')}>Join</button>
-                        <button onClick={() => { setGeneratedRoom(null); setGeneratedLink('') }} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#185FA5', fontSize: 18, lineHeight: 1 }}>×</button>
-                    </div>
-                )}
+                    )
+                })()}
 
                 {/* ── Two-column layout ── */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 16, marginBottom: 28 }}>
