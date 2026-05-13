@@ -38,6 +38,7 @@ services:
       LIVEKIT_API_KEY: ${LIVEKIT_API_KEY}
       LIVEKIT_API_SECRET: ${LIVEKIT_API_SECRET}
       JWT_SECRET: ${JWT_SECRET}
+      NGROK_URL: ${NGROK_URL}
       SPRING_FLYWAY_ENABLED: "false"
     depends_on:
       postgres:

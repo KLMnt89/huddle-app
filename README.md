@@ -100,9 +100,9 @@ git clone https://github.com/mrkskq/Real-Time-Video-Chat-App.git
 cd Real-Time-Video-Chat-App
 ```
 
-### 2. Create the `.env` file
+### 2. Create the `.env` files
 
-Create a `.env` file in the project root with the following variables:
+Create a `.env` file in the `project root` with the following variables:
 
 ```env
 POSTGRES_DB=muxvideorooms
@@ -115,6 +115,13 @@ LIVEKIT_API_KEY=your_api_key
 LIVEKIT_API_SECRET=your_api_secret
 
 JWT_SECRET=your_base64_encoded_jwt_secret
+
+NGROK_URL=https://your-ngrok-url.ngrok-free.app
+```
+
+Create a `.env` file inside the `frontend/` directory with the following variable:
+```env
+VITE_API_URL=https://your-ngrok-url.ngrok-free.app
 ```
 
 ### 3. Start the application
@@ -172,7 +179,7 @@ In the **ngrok terminal**, run:
 ngrok http 80
 ```
  
-You will see output similar to:
+You will see output ***similar to***: 
  
 ```
 Forwarding  https://abc123.ngrok-free.app -> http://localhost:80
@@ -180,16 +187,21 @@ Forwarding  https://abc123.ngrok-free.app -> http://localhost:80
  
 Keep the ngrok terminal open for as long as you want the link to be active. Closing it will terminate the tunnel.
  
-#### Step 4 — Add the ngrok URL to CorsConfig.java
- 
-Spring Security's CORS policy only allows origins you explicitly whitelist. Open `CorsConfig.java` and add your ngrok URL:
- 
-```java
-config.addAllowedOrigin("http://localhost");
-config.addAllowedOrigin("http://localhost:5173");
-config.addAllowedOrigin("https://abc123.ngrok-free.app"); // ← your ngrok URL
+#### Step 4 — Update the ngrok URL in the `.env` files 
+
+Spring Security's CORS policy only allows origins you explicitly whitelist. The backend is already configured to read the ngrok URL from the `.env` file, so you only need to update the value of `NGROK_URL`.
+
+Update the root `.env` file: 
+```env
+NGROK_URL=https://abc123.ngrok-free.app
 ```
- 
+
+Also update the frontend `.env` file with the same ngrok URL:
+
+```env
+VITE_API_URL=https://abc123.ngrok-free.app/api
+```
+
 Then rebuild the containers so the change takes effect:
  
 ```bash
@@ -199,6 +211,8 @@ docker compose up -d --build
 > **Note:** Do not run `bash reset.sh` here — that script removes the database volume and **all your data will be lost**.
  
 #### Step 5 — Share the link
+
+> *When a meeting is created, the system generates two join links: a local development link (localhost) for testing and a public ngrok link for external access and sharing. The **ngrok** link can be shared with other users, allowing them to join the same meeting from outside the local network. Guests can join directly using this link without needing to register or log in.*
  
 Send `https://abc123.ngrok-free.app` to anyone you want to invite. The second user only needs to:
  
@@ -207,9 +221,8 @@ Send `https://abc123.ngrok-free.app` to anyone you want to invite. The second us
 3. Enter the room
 
 That's it — no code, no Docker, no installation required on their end.
- 
-> **Note:** The free ngrok plan generates a new random URL every time you restart `ngrok http 80`. Update `CorsConfig.java` and rebuild whenever the URL changes.
 
+> **Note:** The free ngrok plan generates a new random URL every time you restart `ngrok http 80`. If the same user keeps running `ngrok http 80` on the same machine/session, the URL usually stays the same while the tunnel is active. However, when another user runs `ngrok http 80` locally on their own machine, a different URL will be generated. Update the `NGROK_URL` value in both `.env` files and rebuild whenever the URL changes.
 ### Clean reset (wipes all data)
 
 ```bash
