@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: huddle
+data:
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/muxvideorooms
+  LIVEKIT_URL: wss://videochatapp-jbc6g95h.livekit.cloud
+  LIVEKIT_PUBLIC_URL: wss://videochatapp-jbc6g95h.livekit.cloud
+  NGROK_URL: https://unaired-tackiness-deviant.ngrok-free.dev
+  SPRING_FLYWAY_ENABLED: "false"

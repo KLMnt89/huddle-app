@@ -1,0 +1,283 @@
+apiVersion: v1
+data:
+  init.sql: |
+    create table contact (
+                             id          bigserial primary key,
+                             first_name  varchar(100) not null,
+                             last_name   varchar(100) not null,
+                             email       varchar(255) not null unique,
+                             phone       varchar(50),
+                             status      varchar(20)  not null default 'OFFLINE',
+                             created_at  timestamp    not null
+    );
+
+    create table room (
+                          id            bigserial primary key,
+                          name          varchar(255) not null,
+                          mux_space_id  varchar(255),
+                          invite_code   varchar(255) not null unique,
+                          status        varchar(20)  not null default 'ACTIVE',
+                          created_at    timestamp    not null,
+                          ended_at      timestamp,
+                          created_by    varchar(255) not null
+    );
+
+    create table room_participants (
+                                       room_id    bigint not null references room(id) on delete cascade,
+                                       contact_id bigint not null references contact(id) on delete cascade,
+                                       primary key (room_id, contact_id)
+    );
+
+    create table meeting (
+                             id           bigserial primary key,
+                             title        varchar(255) not null,
+                             description  text,
+                             status       varchar(20)  not null default 'SCHEDULED',
+                             scheduled_at timestamp,
+                             started_at   timestamp,
+                             ended_at     timestamp,
+                             created_by   varchar(255) not null,
+                             room_id      bigint references room(id) on delete set null
+    );
+
+    create table meeting_participants (
+                                          meeting_id bigint not null references meeting(id) on delete cascade,
+                                          contact_id bigint not null references contact(id) on delete cascade,
+                                          primary key (meeting_id, contact_id)
+    );
+
+    create table meeting_note (
+                                  id         bigserial primary key,
+                                  content    text         not null,
+                                  written_by varchar(255) not null,
+                                  created_at timestamp    not null,
+                                  updated_at timestamp    not null,
+                                  meeting_id bigint       not null references meeting(id) on delete cascade
+    );insert into contact (first_name, last_name, email, phone, status, created_at) values
+      ('Марија',    'Костовска',    'm.kostovska@huddle.mk',    '+389 70 111 222', 'ONLINE',  now()),
+      ('Томислав',  'Стојков',      't.stojkov@huddle.mk',      '+389 70 333 444', 'BUSY',    now()),
+      ('Ана',       'Митревска',    'a.mitrevska@huddle.mk',    '+389 70 555 666', 'ONLINE',  now()),
+      ('Емил',      'Блажевски',    'e.blazevski@huddle.mk',    '+389 70 777 888', 'OFFLINE', now()),
+      ('Петар',     'Николов',      'p.nikolov@huddle.mk',      '+389 70 999 000', 'OFFLINE', now()),
+      ('Сара',      'Јовановска',   's.jovanovska@huddle.mk',   '+389 71 100 200', 'ONLINE',  now()),
+      ('Никола',    'Петрески',     'n.petreski@huddle.mk',     '+389 71 200 300', 'BUSY',    now()),
+      ('Елена',     'Стефановска',  'e.stefanovska@huddle.mk',  '+389 71 300 400', 'ONLINE',  now());
+
+    insert into meeting (title, description, status, scheduled_at, started_at, ended_at, created_by) values
+      ('Sprint планирање',
+       'Планирање на Q2 sprint со тимот — задачи, рокови, одговорности',
+       'ACTIVE',
+       now(),
+       now(),
+       null,
+       'admin'),
+
+      ('1:1 со Томислав',
+       'Неделен 1:1 разговор — напредок и блокери',
+       'ENDED',
+       now() - interval '1 day 2 hours',
+       now() - interval '1 day 2 hours',
+       now() - interval '1 day 1 hour',
+       'admin'),
+
+      ('Retro – Април',
+       'Ретроспектива на изминатиот месец — што оди добро, што треба да се подобри',
+       'ENDED',
+       now() - interval '3 days',
+       now() - interval '3 days',
+       now() - interval '3 days' + interval '1 hour 20 minutes',
+       'admin'),
+
+      ('Design review – нов UI',
+       'Преглед на новиот дизајн на апликацијата со тимот',
+       'SCHEDULED',
+       now() + interval '4 hours',
+       null,
+       null,
+       'admin'),
+
+      ('Client demo – Тетекс',
+       'Демо на апликацијата за клиентот Тетекс АД',
+       'SCHEDULED',
+       now() + interval '2 days',
+       null,
+       null,
+       'admin'),
+
+      ('Backend sync',
+       'Технички состанок за API интеграција и архитектурни одлуки',
+       'SCHEDULED',
+       now() + interval '4 days',
+       null,
+       null,
+       'admin'),
+
+      ('Planning Q3',
+       'Квартално планирање — цели, KPI и буџет за Q3',
+       'SCHEDULED',
+       now() + interval '8 days',
+       null,
+       null,
+       'admin'),
+
+      ('Team building',
+       'Тимски настан — неформален разговор и планирање на следната четвртина',
+       'SCHEDULED',
+       now() + interval '15 days',
+       null,
+       null,
+       'admin');
+
+    insert into meeting_participants (meeting_id, contact_id) values
+      (1, 1), (1, 2), (1, 3), (1, 7),
+      (2, 2),
+      (3, 1), (3, 2), (3, 3), (3, 4), (3, 5), (3, 6),
+      (4, 1), (4, 3), (4, 8),
+      (5, 1), (5, 2), (5, 3), (5, 4),
+      (6, 2), (6, 3), (6, 5), (6, 7),
+      (7, 1), (7, 2), (7, 3), (7, 4), (7, 5), (7, 6), (7, 7), (7, 8),
+      (8, 1), (8, 2), (8, 3), (8, 4), (8, 5), (8, 6), (8, 7), (8, 8);
+
+    insert into meeting_note (content, written_by, created_at, updated_at, meeting_id) values
+      ('Договоривме 3 главни задачи: Auth модул, Dashboard UI и API интеграција.',
+       'admin', now(), now(), 1),
+      ('Рокот е 15-ти. Секој член го зема по еден таск и го пријавува во Jira.',
+       'admin', now(), now(), 1),
+      ('Разговаравме за блокерот со LiveKit конекцијата — решено со промена на CORS конфиг.',
+       'admin', now() - interval '1 day 1 hour 30 minutes', now() - interval '1 day 1 hour 30 minutes', 2),
+      ('Ретроспективата покажа дека треба подобрување на комуникацијата помеѓу frontend и backend тимот.',
+       'admin', now() - interval '3 days' + interval '1 hour', now() - interval '3 days' + interval '1 hour', 3),
+      ('Следен спринт фокус: перформанси, bug fixing и подготовка за клиентски демо.',
+       'admin', now() - interval '3 days' + interval '1 hour 10 minutes', now() - interval '3 days' + interval '1 hour 10 minutes', 3);
+    ALTER TABLE room RENAME COLUMN mux_space_id TO live_kit_room_name;
+    create table users (
+        id         bigserial    primary key,
+        first_name varchar(100) not null,
+        last_name  varchar(100) not null,
+        username   varchar(100) not null unique,
+        email      varchar(255) not null unique,
+        password   varchar(255) not null,
+        role       varchar(20)  not null default 'ROLE_USER',
+        created_at timestamp    not null
+    );
+    CREATE TABLE refresh_token (
+        id         BIGSERIAL PRIMARY KEY,
+        user_id    BIGINT       NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        token      VARCHAR(512) NOT NULL UNIQUE,
+        expires_at TIMESTAMP    NOT NULL,
+        created_at TIMESTAMP    NOT NULL
+    );
+    create table chat_message (
+        id       bigserial primary key,
+        room_id  bigint       not null references room(id) on delete cascade,
+        sender   varchar(255) not null,
+        content  text         not null,
+        sent_at  timestamp    not null
+    );
+
+    create index idx_chat_message_room_id on chat_message(room_id);
+
+    create table room_note (
+        id         bigserial primary key,
+        room_id    bigint       not null unique references room(id) on delete cascade,
+        content    text,
+        updated_at timestamp    not null,
+        updated_by varchar(255)
+    );
+    -- Add lastSeenAt to users for presence tracking
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS last_seen_at TIMESTAMP;
+
+    -- Add expiresAt to room for invite link expiry (24h)
+    ALTER TABLE room ADD COLUMN IF NOT EXISTS expires_at TIMESTAMP;
+
+    -- Back-fill existing rooms: set expires_at = created_at + 24h
+    UPDATE room SET expires_at = created_at + INTERVAL '24 hours' WHERE expires_at IS NULL;
+
+    -- Participant join/leave log
+    CREATE TABLE IF NOT EXISTS room_participant_log (
+        id               BIGSERIAL PRIMARY KEY,
+        room_id          BIGINT       NOT NULL REFERENCES room(id) ON DELETE CASCADE,
+        participant_name VARCHAR(255) NOT NULL,
+        joined_at        TIMESTAMP    NOT NULL DEFAULT NOW(),
+        left_at          TIMESTAMP
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_participant_log_room_id ON room_participant_log(room_id);
+    -- Enable pgcrypto for BCrypt password hashing
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+    -- ── Seed users ────────────────────────────────────────────────────────────
+    INSERT INTO users (first_name, last_name, username, email, password, role, created_at)
+    VALUES
+        ('Kliment',    'Stavreski', 'kliment.stavreski',
+         'kliment.stavreski@students.finki.ukim.mk',
+         crypt('kliment123',    gen_salt('bf', 10)), 'ROLE_ADMIN', now()),
+
+        ('Aleksandar', 'Koloski',  'aleksandar.koloski',
+         'aleksandar.koloski@students.finki.ukim.mk',
+         crypt('aleksandar123', gen_salt('bf', 10)), 'ROLE_ADMIN', now()),
+
+        ('Ana',        'Markoska', 'ana.markoska',
+         'ana.markoska@students.finki.ukim.mk',
+         crypt('ana123',        gen_salt('bf', 10)), 'ROLE_ADMIN', now()),
+
+        ('Kliment',    'Stavreski', 'kliment_user',
+         'kliment.user@students.finki.ukim.mk',
+         crypt('kliment123',    gen_salt('bf', 10)), 'ROLE_USER',  now()),
+
+        ('Aleksandar', 'Koloski',  'aleksandar_user',
+         'aleksandar.user@students.finki.ukim.mk',
+         crypt('aleksandar123', gen_salt('bf', 10)), 'ROLE_USER',  now()),
+
+        ('Ana',        'Markoska', 'ana_user',
+         'ana.user@students.finki.ukim.mk',
+         crypt('ana123',        gen_salt('bf', 10)), 'ROLE_USER',  now())
+    ON CONFLICT (username) DO NOTHING;
+
+    -- ── Groups tables ─────────────────────────────────────────────────────────
+    CREATE TABLE IF NOT EXISTS huddle_group (
+        id         BIGSERIAL    PRIMARY KEY,
+        name       VARCHAR(255) NOT NULL,
+        created_by VARCHAR(255),
+        created_at TIMESTAMP    NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS group_contact (
+        group_id   BIGINT NOT NULL REFERENCES huddle_group(id) ON DELETE CASCADE,
+        contact_id BIGINT NOT NULL REFERENCES contact(id)      ON DELETE CASCADE,
+        PRIMARY KEY (group_id, contact_id)
+    );
+
+    -- ── Team member contacts ──────────────────────────────────────────────────
+    INSERT INTO contact (first_name, last_name, email, phone, status, created_at) VALUES
+        ('Kliment',    'Stavreski', 'kliment.stavreski@finki.ukim.mk',    NULL, 'ONLINE',  now()),
+        ('Aleksandar', 'Koloski',   'aleksandar.koloski@finki.ukim.mk',   NULL, 'ONLINE',  now()),
+        ('Ana',        'Markoska',  'ana.markoska@finki.ukim.mk',         NULL, 'ONLINE',  now()),
+        ('Kliment',    'Stavreski', 'kliment.user@finki.ukim.mk',         NULL, 'OFFLINE', now()),
+        ('Aleksandar', 'Koloski',   'aleksandar.user@finki.ukim.mk',      NULL, 'OFFLINE', now()),
+        ('Ana',        'Markoska',  'ana.user@finki.ukim.mk',             NULL, 'OFFLINE', now());
+
+    -- ── Two seed groups ───────────────────────────────────────────────────────
+    INSERT INTO huddle_group (name, created_by, created_at) VALUES
+        ('Dev Team',    'admin', now()),
+        ('Study Group', 'admin', now());
+
+    -- All 6 team contacts in both groups
+    INSERT INTO group_contact (group_id, contact_id)
+    SELECT g.id, c.id
+    FROM huddle_group g
+    CROSS JOIN contact c
+    WHERE g.name IN ('Dev Team', 'Study Group')
+      AND c.email IN (
+          'kliment.stavreski@finki.ukim.mk',
+          'aleksandar.koloski@finki.ukim.mk',
+          'ana.markoska@finki.ukim.mk',
+          'kliment.user@finki.ukim.mk',
+          'aleksandar.user@finki.ukim.mk',
+          'ana.user@finki.ukim.mk'
+      );
+    ALTER TABLE meeting ADD COLUMN IF NOT EXISTS group_id BIGINT REFERENCES huddle_group(id) ON DELETE SET NULL;
+kind: ConfigMap
+metadata:
+  name: db-migrations
+  namespace: huddle

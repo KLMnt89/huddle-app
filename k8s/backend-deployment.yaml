@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: huddle
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      initContainers:
+        - name: db-migrate
+          image: postgres:15
+          command:
+            - bash
+            - -c
+            - |
+              until pg_isready -h postgres -U postgres; do
+                echo "Waiting for postgres..."; sleep 2
+              done
+              TABLE_EXISTS=$(psql -h postgres -U postgres -d muxvideorooms -tAc \
+                "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='contact'")
+              if [ "$TABLE_EXISTS" = "0" ]; then
+                echo "Running migrations..."
+                psql -h postgres -U postgres -d muxvideorooms -f /migrations/init.sql
+                echo "Migrations done."
+              else
+                echo "Migrations already applied, skipping."
+              fi
+          env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: migrations
+              mountPath: /migrations
+      containers:
+        - name: backend
+          image: klm89/huddle-backend:latest
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secret
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            failureThreshold: 12
+      volumes:
+        - name: migrations
+          configMap:
+            name: db-migrations
