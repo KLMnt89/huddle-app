@@ -27,6 +27,10 @@ Thumbs.db
 # Docker volumes
 pgdata/
 
+# Kubernetes secrets (contain real credentials)
+k8s/backend-secret.yaml
+k8s/postgres-secret.yaml
+
 # Claude AI assistant files
 .claude/
 claude.md
