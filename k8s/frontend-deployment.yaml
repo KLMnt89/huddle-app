@@ -15,6 +15,6 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: klm89/huddle-frontend:latest
+          image: klm89/huddle-frontend:0f43f1337f986570114803f920a7d4347c79462b
           ports:
             - containerPort: 80
