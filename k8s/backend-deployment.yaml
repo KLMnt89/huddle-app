@@ -43,7 +43,7 @@ spec:
               mountPath: /migrations
       containers:
         - name: backend
-          image: klm89/huddle-backend:d9d644764506beec49411df6af9bf49ced9505ee
+          image: klm89/huddle-backend:0430737acdd14ab6d5c56c2eaef509dbc6e437aa
           ports:
             - containerPort: 8080
           envFrom:
