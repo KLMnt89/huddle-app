@@ -15,7 +15,7 @@ spec:
     spec:
       initContainers:
         - name: db-migrate
-          image: postgres:15
+          image: postgres:15-alpine
           command:
             - bash
             - -c
@@ -32,6 +32,13 @@ spec:
               else
                 echo "Migrations already applied, skipping."
               fi
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "100m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
           env:
             - name: PGPASSWORD
               valueFrom:
@@ -51,6 +58,13 @@ spec:
                 name: backend-config
             - secretRef:
                 name: backend-secret
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
           readinessProbe:
             httpGet:
               path: /actuator/health
@@ -58,6 +72,13 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 10
             failureThreshold: 12
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 5
       volumes:
         - name: migrations
           configMap:
