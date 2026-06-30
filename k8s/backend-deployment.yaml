@@ -20,14 +20,14 @@ spec:
             - bash
             - -c
             - |
-              until pg_isready -h postgres -U postgres; do
+              until pg_isready -h huddle-postgres-rw -U huddle; do
                 echo "Waiting for postgres..."; sleep 2
               done
-              TABLE_EXISTS=$(psql -h postgres -U postgres -d muxvideorooms -tAc \
+              TABLE_EXISTS=$(psql -h huddle-postgres-rw -U huddle -d muxvideorooms -tAc \
                 "SELECT COUNT(*) FROM information_schema.tables WHERE table_name='contact'")
               if [ "$TABLE_EXISTS" = "0" ]; then
                 echo "Running migrations..."
-                psql -h postgres -U postgres -d muxvideorooms -f /migrations/init.sql
+                psql -h huddle-postgres-rw -U huddle -d muxvideorooms -f /migrations/init.sql
                 echo "Migrations done."
               else
                 echo "Migrations already applied, skipping."
@@ -37,7 +37,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: postgres-secret
-                  key: POSTGRES_PASSWORD
+                  key: password
           volumeMounts:
             - name: migrations
               mountPath: /migrations
